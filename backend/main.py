@@ -7,18 +7,27 @@ import cloudinary.uploader
 import os
 from dotenv import load_dotenv
 
+# טוען את קובץ .env
 load_dotenv()
 
-
+# הגדרות Cloudinary מהסביבה
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
-
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app)  # לא להגביל ל־/api/* – פותח לכול
+
+# מוסיף כותרות CORS לכל תגובה, כדי למנוע שגיאות מהדפדפן
+@app.after_request
+def apply_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET,PUT,POST,OPTIONS"
+    return response
+
 BASE_URL = "https://www.skidrowreloaded.com/page/{}/"
 
 @app.route("/api/games")
@@ -41,12 +50,12 @@ def get_games():
 
             if image_url:
                 try:
-                    # העלאת התמונה ל-Cloudinary
-                    res = cloudinary.uploader.upload(image_url)
+                    # העלאה ישירות מ־URL דרך Cloudinary (type=fetch מהיר ובטוח)
+                    res = cloudinary.uploader.upload(image_url, type="fetch")
                     cloud_image_url = res['secure_url']
                     games.append({"title": title, "link": link, "image": cloud_image_url})
                 except Exception as e:
-                    print(f"Error uploading image: {e}")
+                    print(f"❌ Error uploading image: {e}")
                     continue
 
         if len(games) >= 300:
