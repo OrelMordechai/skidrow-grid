@@ -30,7 +30,7 @@ function updateCount(count) {
 }
 
 
-fetch("http://localhost:5000/api/games")
+fetch("https://skidrow-backend.onrender.com/api/games")
   .then(res => res.json())
   .then(games => {
     allGames = games;
