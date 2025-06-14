@@ -1,7 +1,21 @@
 from flask import Flask, jsonify
 import requests
 from bs4 import BeautifulSoup
-from flask_cors import CORS  # 👈 חדש
+from flask_cors import CORS
+import cloudinary
+import cloudinary.uploader
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -10,11 +24,9 @@ BASE_URL = "https://www.skidrowreloaded.com/page/{}/"
 @app.route("/api/games")
 def get_games():
     games = []
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
 
-    for page in range(1, 35):  # עד 30 עמודים או כל עוד צריך
+    for page in range(1, 35):
         url = BASE_URL.format(page)
         res = requests.get(url, headers=headers)
         soup = BeautifulSoup(res.text, "html.parser")
@@ -25,10 +37,17 @@ def get_games():
             title = a_tag.text.strip()
             link = a_tag["href"]
             img_tag = post.select_one("div.post-excerpt a img")
-            image = img_tag["src"] if img_tag and "logoo" not in img_tag["src"] else None
+            image_url = img_tag["src"] if img_tag and "logoo" not in img_tag["src"] else None
 
-            if image:
-                games.append({"title": title, "link": link, "image": image})
+            if image_url:
+                try:
+                    # העלאת התמונה ל-Cloudinary
+                    res = cloudinary.uploader.upload(image_url)
+                    cloud_image_url = res['secure_url']
+                    games.append({"title": title, "link": link, "image": cloud_image_url})
+                except Exception as e:
+                    print(f"Error uploading image: {e}")
+                    continue
 
         if len(games) >= 300:
             break
