@@ -2,7 +2,6 @@ Flask
 gunicorn
 requests
 beautifulsoup4
-flask_cors
+flask-cors
 cloudinary
-os
 python-dotenv
