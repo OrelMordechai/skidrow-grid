@@ -3,3 +3,6 @@ gunicorn
 requests
 beautifulsoup4
 flask_cors
+cloudinary
+os
+dotenv
